@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Falling Items</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #282c34;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: lightblue;
+            border: 2px solid black;
+        }
+        #playAgainButton {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 20px;
+            color: white;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #playAgainButton:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <button id="playAgainButton">Play Again</button>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const playAgainButton = document.getElementById("playAgainButton");
+
+        // Canvas dimensions
+        canvas.width = 800;
+        canvas.height = 600;
+
+        // Game variables
+        let playerX, fallingObjects, score, lives, gameOver, objectSpeed;
+
+        function initGame() {
+            playerX = canvas.width / 2 - 50;
+            fallingObjects = [];
+            score = 0;
+            lives = 3;
+            gameOver = false;
+            objectSpeed = 2;
+
+            playAgainButton.style.display = "none";
+            gameLoop();
+        }
+
+        // Listen for keyboard input
+        let keys = {};
+        window.addEventListener("keydown", (e) => keys[e.key] = true);
+        window.addEventListener("keyup", (e) => keys[e.key] = false);
+
+        // Create falling objects at intervals
+        setInterval(() => {
+            if (!gameOver) {
+                const x = Math.random() * (canvas.width - 30);
+                fallingObjects.push({ x, y: 0 });
+            }
+        }, 1000);
+
+        // Game loop
+        function gameLoop() {
+            if (gameOver) {
+                ctx.font = "40px Arial";
+                ctx.fillStyle = "red";
+                ctx.fillText("Game Over! Your score: " + score, canvas.width / 4, canvas.height / 2 - 20);
+                playAgainButton.style.display = "block";
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw player
+            ctx.fillStyle = "green";
+            ctx.fillRect(playerX, canvas.height - 20, 100, 20);
+
+            // Draw falling objects
+            ctx.fillStyle = "red";
+            for (let i = 0; i < fallingObjects.length; i++) {
+                const obj = fallingObjects[i];
+                obj.y += objectSpeed;
+                ctx.fillRect(obj.x, obj.y, 30, 30);
+
+                // Check collision
+                if (
+                    obj.y + 30 >= canvas.height - 20 &&
+                    obj.x < playerX + 100 &&
+                    obj.x + 30 > playerX
+                ) {
+                    score++;
+                    fallingObjects.splice(i, 1);
+                    i--;
+                } else if (obj.y > canvas.height) {
+                    lives--;
+                    fallingObjects.splice(i, 1);
+                    i--;
+                    if (lives <= 0) {
+                        gameOver = true;
+                    }
+                }
+            }
+
+            // Player movement
+            if (keys["ArrowLeft"] && playerX > 0) playerX -= 10;
+            if (keys["ArrowRight"] && playerX < canvas.width - 100) playerX += 10;
+
+            // Draw score and lives
+            ctx.font = "20px Arial";
+            ctx.fillStyle = "black";
+            ctx.fillText("Score: " + score, 10, 20);
+            ctx.fillText("Lives: " + lives, 10, 50);
+
+            // Increase difficulty over time
+            if (score > 0 && score % 10 === 0) {
+                objectSpeed += 0.05;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Restart game when "Play Again" button is clicked
+        playAgainButton.addEventListener("click", initGame);
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
